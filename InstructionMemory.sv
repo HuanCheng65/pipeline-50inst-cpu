@@ -4,25 +4,39 @@
 
 module InstructionMemory (
     input  logic [31:0] pc,          // Program counter value
-    output Instruction instruction  // Output instruction
+    output Instruction instruction0,  // First instruction output
+    output Instruction instruction1   // Second instruction output
 );
 
     // 1024 32-bit words
     logic [31:0] memory [0:2047];
     
-    // Calculate word address (PC needs to be shifted right by 2 bits because PC is byte-addressed while memory is word-addressed)
-    logic [9:0] word_addr;
-    assign word_addr = pc[11:2];  // Use PC bits [11:2] as word address
+    // Calculate word address for both instructions
+    logic [9:0] word_addr0, word_addr1;
+    assign word_addr0 = pc[11:2];          // First instruction address
+    assign word_addr1 = pc[11:2] + 10'd1;  // Second instruction address (PC + 4)
     
-    assign instruction.instruction = InstructionCode'(memory[word_addr]);
-    assign instruction.opcode = memory[word_addr][31:26];
-    assign instruction.rs = MipsReg'(memory[word_addr][25:21]);
-    assign instruction.rt = MipsReg'(memory[word_addr][20:16]);
-    assign instruction.rd = MipsReg'(memory[word_addr][15:11]);
-    assign instruction.immediate = memory[word_addr][15:0];
-    assign instruction.address = memory[word_addr][25:0];
-    assign instruction.shamt = memory[word_addr][10:6];
-    assign instruction.funct = memory[word_addr][5:0];
+    // First instruction
+    assign instruction0.instruction = InstructionCode'(memory[word_addr0]);
+    assign instruction0.opcode = memory[word_addr0][31:26];
+    assign instruction0.rs = MipsReg'(memory[word_addr0][25:21]);
+    assign instruction0.rt = MipsReg'(memory[word_addr0][20:16]);
+    assign instruction0.rd = MipsReg'(memory[word_addr0][15:11]);
+    assign instruction0.immediate = memory[word_addr0][15:0];
+    assign instruction0.address = memory[word_addr0][25:0];
+    assign instruction0.shamt = memory[word_addr0][10:6];
+    assign instruction0.funct = memory[word_addr0][5:0];
+
+    // Second instruction
+    assign instruction1.instruction = InstructionCode'(memory[word_addr1]);
+    assign instruction1.opcode = memory[word_addr1][31:26];
+    assign instruction1.rs = MipsReg'(memory[word_addr1][25:21]);
+    assign instruction1.rt = MipsReg'(memory[word_addr1][20:16]);
+    assign instruction1.rd = MipsReg'(memory[word_addr1][15:11]);
+    assign instruction1.immediate = memory[word_addr1][15:0];
+    assign instruction1.address = memory[word_addr1][25:0];
+    assign instruction1.shamt = memory[word_addr1][10:6];
+    assign instruction1.funct = memory[word_addr1][5:0];
     
     // Initialize instruction memory
     initial begin
@@ -31,7 +45,6 @@ module InstructionMemory (
         end
         
         // Load instructions from file
-        // Note: Need to modify to correct file path when in use
         $readmemh("code.txt", memory);
     end
 

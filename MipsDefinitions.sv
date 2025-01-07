@@ -88,7 +88,13 @@ typedef enum logic [5:0] {
     OP_ORI     = 6'b001101,
     OP_XORI    = 6'b001110,
     OP_LUI     = 6'b001111,
+    OP_LB      = 6'b100000,  // 添加字节加载指令
+    OP_LH      = 6'b100001,  // 添加半字加载指令
     OP_LW      = 6'b100011,
+    OP_LBU     = 6'b100100,  // 添加无符号字节加载指令
+    OP_LHU     = 6'b100101,  // 添加无符号半字加载指令
+    OP_SB      = 6'b101000,  // 添加字节存储指令
+    OP_SH      = 6'b101001,  // 添加半字存储指令
     OP_SW      = 6'b101011,
     OP_BEQ     = 6'b000100,
     OP_BNE     = 6'b000101,  // 添加 BNE
@@ -125,7 +131,15 @@ typedef enum logic [5:0] {
     FUNCT_ADD     = 6'b100000,
     FUNCT_ADDU    = 6'b100001,
     FUNCT_SUB     = 6'b100010,
-    FUNCT_SUBU    = 6'b100011
+    FUNCT_SUBU    = 6'b100011,
+    FUNCT_MULT    = 6'b011000,
+    FUNCT_MULTU   = 6'b011001,
+    FUNCT_DIV     = 6'b011010,
+    FUNCT_DIVU    = 6'b011011,
+    FUNCT_MFHI    = 6'b010000,
+    FUNCT_MTHI    = 6'b010001,
+    FUNCT_MFLO    = 6'b010010,
+    FUNCT_MTLO    = 6'b010011
 } FunctCode;
 
 typedef enum logic [31:0] {
@@ -290,57 +304,104 @@ typedef struct packed {
 
 // IF/ID Register
 typedef struct packed {
-    logic [31:0] pc;
-    Instruction instruction;
-    ExceptionType exception;           // 添加异常字段
-    logic valid;
+    logic [31:0] pc0;                // 第一条指令的 PC
+    logic [31:0] pc1;                // 第二条指令的 PC
+    Instruction instruction0;         // 第一条指令
+    Instruction instruction1;         // 第二条指令
+    ExceptionType exception0;         // 第一条指令的异常
+    ExceptionType exception1;         // 第二条指令的异常
+    logic valid0;                    // 第一条指令是否有效
+    logic valid1;                    // 第二条指令是否有效
+    logic [31:0] instr_id0;          // 第一条指令的唯一ID
+    logic [31:0] instr_id1;          // 第二条指令的唯一ID
 } IF_ID_Register;
 
 // ID/EX Register
 typedef struct packed {
-    logic [31:0] pc;
-    Instruction instruction;
-    ControlSignals ctrl;
-    MipsReg        rs_addr;
-    MipsReg        rt_addr;
-    logic [31:0]   rs_data;
-    logic [31:0]   rt_data;
-    logic [31:0]   sign_ext_imm;
-    MipsReg        reg_write_addr;
-    logic [31:0]   reg_write_data;
-    ExceptionType  exception;          // 添加异常字段
-    logic valid;
+    logic [31:0] pc0;                 // 第一条指令的 PC
+    logic [31:0] pc1;                 // 第二条指令的 PC
+    Instruction instruction0;          // 第一条指令
+    Instruction instruction1;          // 第二条指令
+    ControlSignals ctrl0;             // 第一条指令的控制信号
+    ControlSignals ctrl1;             // 第二条指令的控制信号
+    MipsReg rs_addr0;                 // 第一条指令的 rs 寄存器地址
+    MipsReg rt_addr0;                 // 第一条指令的 rt 寄存器地址
+    MipsReg rs_addr1;                 // 第二条指令的 rs 寄存器地址
+    MipsReg rt_addr1;                 // 第二条指令的 rt 寄存器地址
+    logic [31:0] rs_data0;            // 第一条指令的 rs 寄存器数据
+    logic [31:0] rt_data0;            // 第一条指令的 rt 寄存器数据
+    logic [31:0] rs_data1;            // 第二条指令的 rs 寄存器数据
+    logic [31:0] rt_data1;            // 第二条指令的 rt 寄存器数据
+    logic [31:0] sign_ext_imm0;       // 第一条指令的立即数符号扩展
+    logic [31:0] sign_ext_imm1;       // 第二条指令的立即数符号扩展
+    MipsReg reg_write_addr0;          // 第一条指令的写寄存器地址
+    MipsReg reg_write_addr1;          // 第二条指令的写寄存器地址
+    logic [31:0] reg_write_data0;     // 第一条指令的写寄存器数据
+    logic [31:0] reg_write_data1;     // 第二条指令的写寄存器数据
+    ExceptionType exception0;          // 第一条指令的异常
+    ExceptionType exception1;          // 第二条指令的异常
+    logic valid0;                     // 第一条指令是否有效
+    logic valid1;                     // 第二条指令是否有效
+    logic [31:0] instr_id0;           // 第一条指令的唯一ID
+    logic [31:0] instr_id1;           // 第二条指令的唯一ID
 } ID_EX_Register;
 
 // EX/MEM Register
 typedef struct packed {
-    logic [31:0] pc;
-    Instruction instruction;
-    ControlSignals ctrl;
-    MipsReg        rs_addr;
-    MipsReg        rt_addr;
-    logic [31:0]   rs_data;
-    logic [31:0]   rt_data;
-    logic [31:0]   alu_result;
-    MipsReg        reg_write_addr;
-    logic [31:0]   reg_write_data;
-    ExceptionType  exception;          // 添加异常字段
-    logic valid;
+    logic [31:0] pc0;                 // 第一条指令的 PC
+    logic [31:0] pc1;                 // 第二条指令的 PC
+    Instruction instruction0;          // 第一条指令
+    Instruction instruction1;          // 第二条指令
+    ControlSignals ctrl0;             // 第一条指令的控制信号
+    ControlSignals ctrl1;             // 第二条指令的控制信号
+    logic [31:0] alu_result0;         // 第一条指令的 ALU 结果
+    logic [31:0] alu_result1;         // 第二条指令的 ALU 结果
+    MipsReg rs_addr0;                 // 第一条指令的 rs 地址
+    MipsReg rs_addr1;                 // 第二条指令的 rs 地址
+    MipsReg rt_addr0;                 // 第一条指令的 rt 地址
+    MipsReg rt_addr1;                 // 第二条指令的 rt 地址
+    logic [31:0] rs_data0;            // 第一条指令的 rs 数据
+    logic [31:0] rs_data1;            // 第二条指令的 rs 数据
+    logic [31:0] rt_data0;            // 第一条指令的 rt 数据
+    logic [31:0] rt_data1;            // 第二条指令的 rt 数据
+    MipsReg reg_write_addr0;          // 第一条指令的写回地址
+    MipsReg reg_write_addr1;          // 第二条指令的写回地址
+    logic [31:0] reg_write_data0;     // 第一条指令的写回数据
+    logic [31:0] reg_write_data1;     // 第二条指令的写回数据
+    logic valid0;                     // 第一条指令是否有效
+    logic valid1;                     // 第二条指令是否有效
+    ExceptionType exception0;             // 第一条指令的异常
+    ExceptionType exception1;             // 第二条指令的异常
+    logic [31:0] instr_id0;           // 第一条指令的唯一ID
+    logic [31:0] instr_id1;           // 第二条指令的唯一ID
 } EX_MEM_Register;
 
 // MEM/WB Register
 typedef struct packed {
-    logic [31:0] pc;
-    Instruction instruction;
-    ControlSignals ctrl;
-    MipsReg        rs_addr;
-    MipsReg        rt_addr;
-    logic [31:0]   rs_data;
-    logic [31:0]   rt_data;
-    MipsReg        reg_write_addr;
-    logic [31:0]   reg_write_data;
-    ExceptionType  exception;          // 添加异常字段
-    logic valid;
+    logic [31:0] pc0;                 // 第一条指令的 PC
+    logic [31:0] pc1;                 // 第二条指令的 PC
+    Instruction instruction0;          // 第一条指令
+    Instruction instruction1;          // 第二条指令
+    ControlSignals ctrl0;             // 第一条指令的控制信号
+    ControlSignals ctrl1;             // 第二条指令的控制信号
+    MipsReg rs_addr0;                 // 第一条指令的 rs 地址
+    MipsReg rs_addr1;                 // 第二条指令的 rs 地址
+    MipsReg rt_addr0;                 // 第一条指令的 rt 地址
+    MipsReg rt_addr1;                 // 第二条指令的 rt 地址
+    logic [31:0] rs_data0;            // 第一条指令的 rs 数据
+    logic [31:0] rs_data1;            // 第二条指令的 rs 数据
+    logic [31:0] rt_data0;            // 第一条指令的 rt 数据
+    logic [31:0] rt_data1;            // 第二条指令的 rt 数据
+    MipsReg reg_write_addr0;          // 第一条指令的写回地址
+    MipsReg reg_write_addr1;          // 第二条指令的写回地址
+    logic [31:0] reg_write_data0;     // 第一条指令的写回数据
+    logic [31:0] reg_write_data1;     // 第二条指令的写回数据
+    logic valid0;                     // 第一条指令是否有效
+    logic valid1;                     // 第二条指令是否有效
+    ExceptionType exception0;             // 第一条指令的异常
+    ExceptionType exception1;             // 第二条指令的异常
+    logic [31:0] instr_id0;           // 第一条指令的唯一ID
+    logic [31:0] instr_id1;           // 第二条指令的唯一ID
 } MEM_WB_Register;
 
 typedef enum logic [2:0] {
@@ -350,6 +411,18 @@ typedef enum logic [2:0] {
     FORWARDING_TYPE_MEM_WB,
     FORWARDING_TYPE_MEMORY
 } ForwardingType;
+
+// 部分解码结果
+typedef struct packed {
+    logic reg_write;              // 是否写寄存器
+    MipsReg rs_addr;             // rs 寄存器地址
+    MipsReg rt_addr;             // rt 寄存器地址
+    MipsReg write_reg_addr;      // 写回寄存器地址
+    logic is_branch;             // 是否是分支/跳转指令
+    logic is_mem_access;         // 是否是访存指令
+    logic is_mdu;                // 是否是乘除法指令
+    logic is_valid;              // 指令是否有效（不是 NOP）
+} PartialDecodeResult;
 
 function automatic void init_reg_names();
     reg_names[0] = "$zero";

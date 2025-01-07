@@ -12,6 +12,7 @@ module DataMemory (
     input  logic [1:0]  mem_width,    // 00-byte, 01-halfword, 10-word
     input  logic        mem_unsigned, // 1-unsigned, 0-signed
     input  logic [31:0] write_data,   // Data to write
+    input  logic        is_inst1,     // 是否是第二条指令在访问内存
     output logic [31:0] read_data     // Read data
 );
 

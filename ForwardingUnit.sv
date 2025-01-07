@@ -24,34 +24,80 @@ module ForwardingUnit #(
         forwarded_data = current_data;
         stall = 0;
         forwarding_type = FORWARDING_TYPE_NONE;
+
         if (required_stage != PipelineStage_NEVER &&
             required_reg != ZERO) begin
+            // 检查 ID/EX 阶段的第一条指令
             if (PIPELINE_STAGE <= PipelineStage_ID && 
-                id_ex_reg.ctrl.reg_write && 
-                id_ex_reg.reg_write_addr == required_reg) begin
-                    forwarded_data = id_ex_reg.reg_write_data;
-                    data_ready_after_stage = get_data_ready_stage(id_ex_reg.ctrl.reg_write_data_src);
+                id_ex_reg.ctrl0.reg_write && 
+                id_ex_reg.valid0 &&
+                id_ex_reg.reg_write_addr0 == required_reg) begin
+                    forwarded_data = id_ex_reg.reg_write_data0;
+                    data_ready_after_stage = get_data_ready_stage(id_ex_reg.ctrl0.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_ID) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_ID_EX;
-            end else if (PIPELINE_STAGE <= PipelineStage_EX && 
-                ex_mem_reg.ctrl.reg_write && 
-                ex_mem_reg.reg_write_addr == required_reg) begin
-                    if (mem_read_in_mem && ex_mem_reg.ctrl.reg_write_data_src == REG_WRITE_DATA_SOURCE_MEM) begin
+            end 
+            // 检查 ID/EX 阶段的第二条指令
+            else if (PIPELINE_STAGE <= PipelineStage_ID && 
+                id_ex_reg.ctrl1.reg_write && 
+                id_ex_reg.valid1 &&  // 第二条指令必须有效
+                id_ex_reg.reg_write_addr1 == required_reg) begin
+                    forwarded_data = id_ex_reg.reg_write_data1;
+                    data_ready_after_stage = get_data_ready_stage(id_ex_reg.ctrl1.reg_write_data_src);
+                    stall = (data_ready_after_stage > PipelineStage_ID) && (PIPELINE_STAGE == required_stage);
+                    forwarding_type = FORWARDING_TYPE_ID_EX;
+            end 
+            // 检查 EX/MEM 阶段的第一条指令
+            else if (PIPELINE_STAGE <= PipelineStage_EX && 
+                ex_mem_reg.ctrl0.reg_write && 
+                ex_mem_reg.valid0 &&
+                ex_mem_reg.reg_write_addr0 == required_reg) begin
+                    if (mem_read_in_mem && ex_mem_reg.ctrl0.reg_write_data_src == REG_WRITE_DATA_SOURCE_MEM) begin
                         forwarded_data = mem_read_result;
                         data_ready_after_stage = PipelineStage_EX;
                         stall = 0;
                         forwarding_type = FORWARDING_TYPE_MEMORY;
                     end else begin
-                        forwarded_data = ex_mem_reg.reg_write_data;
-                        data_ready_after_stage = get_data_ready_stage(ex_mem_reg.ctrl.reg_write_data_src);
+                        forwarded_data = ex_mem_reg.reg_write_data0;
+                        data_ready_after_stage = get_data_ready_stage(ex_mem_reg.ctrl0.reg_write_data_src);
                         stall = (data_ready_after_stage > PipelineStage_EX) && (PIPELINE_STAGE == required_stage);
                         forwarding_type = FORWARDING_TYPE_EX_MEM;
                     end
-            end else if (PIPELINE_STAGE <= PipelineStage_MEM && 
-                mem_wb_reg.ctrl.reg_write && 
-                mem_wb_reg.reg_write_addr == required_reg) begin
-                    forwarded_data = mem_wb_reg.reg_write_data;
-                    data_ready_after_stage = get_data_ready_stage(mem_wb_reg.ctrl.reg_write_data_src);
+            end 
+            // 检查 EX/MEM 阶段的第二条指令
+            else if (PIPELINE_STAGE <= PipelineStage_EX && 
+                ex_mem_reg.ctrl1.reg_write && 
+                ex_mem_reg.valid1 &&
+                ex_mem_reg.reg_write_addr1 == required_reg) begin
+                    if (mem_read_in_mem && ex_mem_reg.ctrl1.reg_write_data_src == REG_WRITE_DATA_SOURCE_MEM) begin
+                        forwarded_data = mem_read_result;
+                        data_ready_after_stage = PipelineStage_EX;
+                        stall = 0;
+                        forwarding_type = FORWARDING_TYPE_MEMORY;
+                    end else begin
+                        forwarded_data = ex_mem_reg.reg_write_data1;
+                        data_ready_after_stage = get_data_ready_stage(ex_mem_reg.ctrl1.reg_write_data_src);
+                        stall = (data_ready_after_stage > PipelineStage_EX) && (PIPELINE_STAGE == required_stage);
+                        forwarding_type = FORWARDING_TYPE_EX_MEM;
+                    end
+            end 
+            // 检查 MEM/WB 阶段的第一条指令
+            else if (PIPELINE_STAGE <= PipelineStage_MEM && 
+                mem_wb_reg.ctrl0.reg_write && 
+                mem_wb_reg.valid0 &&
+                mem_wb_reg.reg_write_addr0 == required_reg) begin
+                    forwarded_data = mem_wb_reg.reg_write_data0;
+                    data_ready_after_stage = get_data_ready_stage(mem_wb_reg.ctrl0.reg_write_data_src);
+                    stall = (data_ready_after_stage > PipelineStage_MEM) && (PIPELINE_STAGE == required_stage);
+                    forwarding_type = FORWARDING_TYPE_MEM_WB;
+            end
+            // 检查 MEM/WB 阶段的第二条指令
+            else if (PIPELINE_STAGE <= PipelineStage_MEM && 
+                mem_wb_reg.ctrl1.reg_write && 
+                mem_wb_reg.valid1 &&
+                mem_wb_reg.reg_write_addr1 == required_reg) begin
+                    forwarded_data = mem_wb_reg.reg_write_data1;
+                    data_ready_after_stage = get_data_ready_stage(mem_wb_reg.ctrl1.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_MEM) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_MEM_WB;
             end
