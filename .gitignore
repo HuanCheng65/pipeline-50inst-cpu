@@ -2,3 +2,10 @@ a.out
 code.txt
 data.txt
 *.log
+
+.pytest_cache
+
+**/__pycache__
+test.asm
+user.out
+mars.out
