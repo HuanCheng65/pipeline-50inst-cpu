@@ -23,7 +23,7 @@ def get_cycle_count():
 
             chunk_size = min(CHUNK_SIZE, size)
             f.seek(size - chunk_size)
-            chunk = f.read(chunk_size).decode("utf-8")
+            chunk = f.read(chunk_size).decode("utf-8", errors="ignore")
 
             # 查找最后一个周期数
             if match := re.search(
