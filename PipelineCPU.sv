@@ -103,15 +103,20 @@ module PipelineCPU(
     EX_MEM_Register ex_mem_reg;
     MEM_WB_Register mem_wb_reg;
     ControlSignals ctrl0, ctrl1;
+    logic mem_read_in_mem;
     logic [31:0] mem_read_result;
 
     // 添加转发相关信号
     ForwardingType ID_forwarding_rs0_type, ID_forwarding_rt0_type;
     ForwardingType ID_forwarding_rs1_type, ID_forwarding_rt1_type;
+    logic [31:0] ID_forwarded_rs0_from, ID_forwarded_rt0_from;
+    logic [31:0] ID_forwarded_rs1_from, ID_forwarded_rt1_from;
     logic [31:0] ID_forwarded_rs0_data, ID_forwarded_rt0_data;
     logic [31:0] ID_forwarded_rs1_data, ID_forwarded_rt1_data;
     ForwardingType EX_forwarding_rs0_type, EX_forwarding_rt0_type;
     ForwardingType EX_forwarding_rs1_type, EX_forwarding_rt1_type;
+    logic [31:0] EX_forwarded_rs0_from, EX_forwarded_rt0_from;
+    logic [31:0] EX_forwarded_rs1_from, EX_forwarded_rt1_from;
     logic [31:0] EX_forwarded_rs0_data, EX_forwarded_rt0_data;
     logic [31:0] EX_forwarded_rs1_data, EX_forwarded_rt1_data;
 
@@ -166,11 +171,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl0.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(ID_forwarded_rs0_data),
         .stall(hazard_rs0_in_id),
-        .forwarding_type(ID_forwarding_rs0_type)
+        .forwarding_type(ID_forwarding_rs0_type),
+        .forwarded_from(ID_forwarded_rs0_from)
     );
 
     ForwardingUnit #(
@@ -183,11 +189,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl0.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(ID_forwarded_rt0_data),
         .stall(hazard_rt0_in_id),
-        .forwarding_type(ID_forwarding_rt0_type)
+        .forwarding_type(ID_forwarding_rt0_type),
+        .forwarded_from(ID_forwarded_rt0_from)
     );
 
     ForwardingUnit #(
@@ -200,11 +207,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl1.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(ID_forwarded_rs1_data),
         .stall(hazard_rs1_in_id),
-        .forwarding_type(ID_forwarding_rs1_type)
+        .forwarding_type(ID_forwarding_rs1_type),
+        .forwarded_from(ID_forwarded_rs1_from)
     );
 
     ForwardingUnit #(
@@ -217,11 +225,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl1.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(ID_forwarded_rt1_data),
         .stall(hazard_rt1_in_id),
-        .forwarding_type(ID_forwarding_rt1_type)
+        .forwarding_type(ID_forwarding_rt1_type),
+        .forwarded_from(ID_forwarded_rt1_from)
     );
 
     // 第一条指令的 EX 阶段转发
@@ -235,11 +244,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl0.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(EX_forwarded_rs0_data),
         .stall(hazard_rs0_in_ex),
-        .forwarding_type(EX_forwarding_rs0_type)
+        .forwarding_type(EX_forwarding_rs0_type),
+        .forwarded_from(EX_forwarded_rs0_from)
     );
 
     ForwardingUnit #(
@@ -252,11 +262,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl0.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(EX_forwarded_rt0_data),
         .stall(hazard_rt0_in_ex),
-        .forwarding_type(EX_forwarding_rt0_type)
+        .forwarding_type(EX_forwarding_rt0_type),
+        .forwarded_from(EX_forwarded_rt0_from)
     );
 
     // 第二条指令的 EX 阶段转发
@@ -270,11 +281,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl1.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(EX_forwarded_rs1_data),
         .stall(hazard_rs1_in_ex),
-        .forwarding_type(EX_forwarding_rs1_type)
+        .forwarding_type(EX_forwarding_rs1_type),
+        .forwarded_from(EX_forwarded_rs1_from)
     );
 
     ForwardingUnit #(
@@ -287,11 +299,12 @@ module PipelineCPU(
         .id_ex_reg(id_ex_reg),
         .ex_mem_reg(ex_mem_reg),
         .mem_wb_reg(mem_wb_reg),
-        .mem_read_in_mem(ex_mem_reg.ctrl1.mem_read),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_result(mem_read_result),
         .forwarded_data(EX_forwarded_rt1_data),
         .stall(hazard_rt1_in_ex),
-        .forwarding_type(EX_forwarding_rt1_type)
+        .forwarding_type(EX_forwarding_rt1_type),
+        .forwarded_from(EX_forwarded_rt1_from)
     );
 
     // 更新 ID 阶段连接
@@ -435,6 +448,7 @@ module PipelineCPU(
         .forwarded_rs_data1(MEM_forwarded_rs_data1),
         .forwarded_rt_data1(MEM_forwarded_rt_data1),
         .mem_wb_reg(mem_wb_reg),
+        .mem_read_in_mem(mem_read_in_mem),
         .mem_read_data(mem_read_result)
     );
 
@@ -462,7 +476,8 @@ module PipelineCPU(
     GeneralPurposeRegisters reg_file(
         .clk(clk),
         .rst(rst),
-        .pc(mem_wb_reg.pc0),
+        .pc0(mem_wb_reg.pc0),
+        .pc1(mem_wb_reg.pc1),
         // 第一条指令的读端口
         .rs_addr0(rs_addr),
         .rt_addr0(rt_addr),
@@ -542,6 +557,8 @@ module PipelineCPU(
                 ID_forwarding_rs0_type, ID_forwarding_rt0_type,
                 EX_forwarding_rs0_type, EX_forwarding_rt0_type,
                 MEM_forwarding_rs0_type, MEM_forwarding_rt0_type,
+                ID_forwarded_rs0_from, ID_forwarded_rt0_from,
+                EX_forwarded_rs0_from, EX_forwarded_rt0_from,
                 rs_addr, rt_addr,
                 id_ex_reg.rs_addr0, id_ex_reg.rt_addr0,
                 ex_mem_reg.rs_addr0, ex_mem_reg.rt_addr0,
@@ -551,7 +568,7 @@ module PipelineCPU(
                 ID_forwarded_rs0_data, ID_forwarded_rt0_data,
                 EX_forwarded_rs0_data, EX_forwarded_rt0_data,
                 MEM_forwarded_rs_data0, MEM_forwarded_rt_data0);
-        end    
+        end
 
         // Pipeline 1 的转发信息
         has_forwarded = (ID_forwarding_rs1_type != ForwardingType'(FORWARDING_TYPE_NONE)) ||
@@ -565,6 +582,8 @@ module PipelineCPU(
                 ID_forwarding_rs1_type, ID_forwarding_rt1_type,
                 EX_forwarding_rs1_type, EX_forwarding_rt1_type,
                 MEM_forwarding_rs1_type, MEM_forwarding_rt1_type,
+                ID_forwarded_rs1_from, ID_forwarded_rt1_from,
+                EX_forwarded_rs1_from, EX_forwarded_rt1_from,
                 rs_addr1, rt_addr1,
                 id_ex_reg.rs_addr1, id_ex_reg.rt_addr1,
                 ex_mem_reg.rs_addr1, ex_mem_reg.rt_addr1,
@@ -596,7 +615,7 @@ module PipelineCPU(
         if (ex_mem_reg.ctrl0.mem_read) begin
             $fdisplay(debug_log_fd, "\n=== Pipeline 0 Memory Read ===");
             $fdisplay(debug_log_fd, "  Address: 0x%h => Data: 0x%h",
-                ex_mem_reg.alu_result0, mem_wb_reg.reg_write_data0);
+                ex_mem_reg.alu_result0, mem_read_result);
         end
         if (ex_mem_reg.ctrl0.mem_write) begin
             $fdisplay(debug_log_fd, "\n=== Pipeline 0 Memory Write ===");
@@ -605,16 +624,16 @@ module PipelineCPU(
         end
         
         // Pipeline 1 的内存访问信息
-        if (ex_mem_reg.ctrl1.mem_read) begin
-            $fdisplay(debug_log_fd, "\n=== Pipeline 1 Memory Read ===");
-            $fdisplay(debug_log_fd, "  Address: 0x%h => Data: 0x%h",
-                ex_mem_reg.alu_result1, mem_wb_reg.reg_write_data1);
-        end
-        if (ex_mem_reg.ctrl1.mem_write) begin
-            $fdisplay(debug_log_fd, "\n=== Pipeline 1 Memory Write ===");
-            $fdisplay(debug_log_fd, "  Address: 0x%h <= Data: 0x%h",
-                ex_mem_reg.alu_result1, MEM_forwarded_rt_data0);
-        end
+        // if (ex_mem_reg.ctrl1.mem_read) begin
+        //     $fdisplay(debug_log_fd, "\n=== Pipeline 1 Memory Read ===");
+        //     $fdisplay(debug_log_fd, "  Address: 0x%h => Data: 0x%h",
+        //         ex_mem_reg.alu_result1, mem_wb_reg.reg_write_data1);
+        // end
+        // if (ex_mem_reg.ctrl1.mem_write) begin
+        //     $fdisplay(debug_log_fd, "\n=== Pipeline 1 Memory Write ===");
+        //     $fdisplay(debug_log_fd, "  Address: 0x%h <= Data: 0x%h",
+        //         ex_mem_reg.alu_result1, MEM_forwarded_rt_data0);
+        // end
         
         // Pipeline 0 的 ALU 操作信息
         if (id_ex_reg.ctrl0.alu_op != ALU_NOP) begin

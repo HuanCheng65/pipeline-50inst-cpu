@@ -204,7 +204,7 @@ module InstructionDecodeStage(
 
             // 第二条指令
             if (!stall1) begin
-                if (flush1) begin
+                if (flush1 || !if_id_reg.valid1) begin
                     // 完全清空第二条指令的所有信号
                     id_ex_reg.pc1 <= '0;
                     id_ex_reg.instruction1 <= '0;

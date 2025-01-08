@@ -16,6 +16,7 @@ module MemoryStage(
     input  logic [31:0] forwarded_rs_data1,
     input  logic [31:0] forwarded_rt_data1,
     output MEM_WB_Register mem_wb_reg,
+    output logic mem_read_in_mem,
     output logic [31:0] mem_read_data
 );
 
@@ -48,6 +49,8 @@ module MemoryStage(
             is_inst1_mem = 1'b0;
         end
     end
+
+    assign mem_read_in_mem = mem_read;
 
     DataMemory data_mem(
         .clk(clk),

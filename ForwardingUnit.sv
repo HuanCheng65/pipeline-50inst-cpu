@@ -17,7 +17,8 @@ module ForwardingUnit #(
     input logic [31:0] mem_read_result,
     output logic [31:0] forwarded_data,
     output logic stall,
-    output ForwardingType forwarding_type // for debug
+    output ForwardingType forwarding_type, // for debug
+    output logic [31:0] forwarded_from // From which pipeline
 );
     PipelineStage data_ready_after_stage;
     always @(*) begin : forward_data
@@ -36,6 +37,7 @@ module ForwardingUnit #(
                     data_ready_after_stage = get_data_ready_stage(id_ex_reg.ctrl0.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_ID) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_ID_EX;
+                    forwarded_from = 32'd0;
             end 
             // 检查 ID/EX 阶段的第二条指令
             else if (PIPELINE_STAGE <= PipelineStage_ID && 
@@ -46,6 +48,7 @@ module ForwardingUnit #(
                     data_ready_after_stage = get_data_ready_stage(id_ex_reg.ctrl1.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_ID) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_ID_EX;
+                    forwarded_from = 32'd1;
             end 
             // 检查 EX/MEM 阶段的第一条指令
             else if (PIPELINE_STAGE <= PipelineStage_EX && 
@@ -57,11 +60,13 @@ module ForwardingUnit #(
                         data_ready_after_stage = PipelineStage_EX;
                         stall = 0;
                         forwarding_type = FORWARDING_TYPE_MEMORY;
+                        forwarded_from = 32'd0;
                     end else begin
                         forwarded_data = ex_mem_reg.reg_write_data0;
                         data_ready_after_stage = get_data_ready_stage(ex_mem_reg.ctrl0.reg_write_data_src);
                         stall = (data_ready_after_stage > PipelineStage_EX) && (PIPELINE_STAGE == required_stage);
                         forwarding_type = FORWARDING_TYPE_EX_MEM;
+                        forwarded_from = 32'd0;
                     end
             end 
             // 检查 EX/MEM 阶段的第二条指令
@@ -74,11 +79,13 @@ module ForwardingUnit #(
                         data_ready_after_stage = PipelineStage_EX;
                         stall = 0;
                         forwarding_type = FORWARDING_TYPE_MEMORY;
+                        forwarded_from = 32'd1;
                     end else begin
                         forwarded_data = ex_mem_reg.reg_write_data1;
                         data_ready_after_stage = get_data_ready_stage(ex_mem_reg.ctrl1.reg_write_data_src);
                         stall = (data_ready_after_stage > PipelineStage_EX) && (PIPELINE_STAGE == required_stage);
                         forwarding_type = FORWARDING_TYPE_EX_MEM;
+                        forwarded_from = 32'd1;
                     end
             end 
             // 检查 MEM/WB 阶段的第一条指令
@@ -90,6 +97,7 @@ module ForwardingUnit #(
                     data_ready_after_stage = get_data_ready_stage(mem_wb_reg.ctrl0.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_MEM) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_MEM_WB;
+                    forwarded_from = 32'd0;
             end
             // 检查 MEM/WB 阶段的第二条指令
             else if (PIPELINE_STAGE <= PipelineStage_MEM && 
@@ -100,6 +108,7 @@ module ForwardingUnit #(
                     data_ready_after_stage = get_data_ready_stage(mem_wb_reg.ctrl1.reg_write_data_src);
                     stall = (data_ready_after_stage > PipelineStage_MEM) && (PIPELINE_STAGE == required_stage);
                     forwarding_type = FORWARDING_TYPE_MEM_WB;
+                    forwarded_from = 32'd1;
             end
         end
     end

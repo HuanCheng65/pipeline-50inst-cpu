@@ -2,6 +2,7 @@
 
 `include "MipsDefinitions.sv"
 `include "common.vh"
+`include "MultiplicationDivisionUnit.sv"
 
 module OperandMux(
     input  OperandSource source,
@@ -55,6 +56,32 @@ module ExecutionStage(
 
     // MDU signals
     logic [31:0] mdu_data_read;
+    logic [31:0] mdu_operand1, mdu_operand2;
+    mdu_operation_t mdu_operation;
+    logic mdu_start;
+
+    // MDU 多路选择器
+    always @(*) begin : mdu_mux
+        if (id_ex_reg.ctrl0.mdu_start || id_ex_reg.ctrl0.mdu_use) begin
+            // 第一条指令使用 MDU
+            mdu_operand1 = operand1_0;
+            mdu_operand2 = operand2_0;
+            mdu_operation = mdu_operation_t'(id_ex_reg.ctrl0.mdu_operation);
+            mdu_start = id_ex_reg.ctrl0.mdu_start && !stall0;
+        end else if (id_ex_reg.ctrl1.mdu_start || id_ex_reg.ctrl1.mdu_use) begin
+            // 第二条指令使用 MDU
+            mdu_operand1 = operand1_1;
+            mdu_operand2 = operand2_1;
+            mdu_operation = mdu_operation_t'(id_ex_reg.ctrl1.mdu_operation);
+            mdu_start = id_ex_reg.ctrl1.mdu_start && !stall1;
+        end else begin
+            // 没有指令使用 MDU
+            mdu_operand1 = '0;
+            mdu_operand2 = '0;
+            mdu_operation = MDU_READ_HI;  // 默认操作
+            mdu_start = 1'b0;
+        end
+    end
 
     // 第一条指令的操作数选择
     OperandMux operand1_mux_0(
@@ -110,14 +137,14 @@ module ExecutionStage(
         .overflow(overflow_1)
     );
 
-    // 共享的 MDU（只处理第一条指令）
+    // 共享的 MDU
     MultiplicationDivisionUnit mdu(
         .reset(rst),
         .clock(clk),
-        .operand1(operand1_0),
-        .operand2(operand2_0),
-        .operation(id_ex_reg.ctrl0.mdu_operation),
-        .start(id_ex_reg.ctrl0.mdu_start && !stall0),
+        .operand1(mdu_operand1),
+        .operand2(mdu_operand2),
+        .operation(mdu_operation),
+        .start(mdu_start),
         .busy(mdu_busy),
         .dataRead(mdu_data_read)
     );
@@ -137,6 +164,7 @@ module ExecutionStage(
     always @(*) begin : update_reg_write_data_1
         case (id_ex_reg.ctrl1.reg_write_data_src)
             REG_WRITE_DATA_SOURCE_ALU: reg_write_data_1 = alu_result_1;
+            REG_WRITE_DATA_SOURCE_MDU: reg_write_data_1 = mdu_data_read;
             default: reg_write_data_1 = id_ex_reg.reg_write_data1;
         endcase
     end

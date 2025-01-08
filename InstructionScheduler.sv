@@ -56,9 +56,10 @@ module InstructionScheduler(
                         !has_war_dependency &&
                         !decode0.is_branch &&  // 第一条不是跳转
                         !decode1.is_branch &&  // 第二条不是跳转
-                        !decode0.is_mdu &&     // 第一条不是乘除法指令
-                        !decode1.is_mdu &&     // 第二条不是乘除法指令
-                        !(decode0.is_mem_access && decode1.is_mem_access); // 不能同时有两条访存指令
+                        !decode0.is_mdu &&
+                        !decode1.is_mdu &&
+                        !decode0.is_mem_access &&
+                        !decode1.is_mem_access; // 访存指令不允许双发射
     end
 
 endmodule

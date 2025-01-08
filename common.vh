@@ -140,6 +140,10 @@ task automatic print_forwarding_info(
     ForwardingType ex_rt_type,
     ForwardingType mem_rs_type,
     ForwardingType mem_rt_type,
+    logic [31:0] id_rs_from,
+    logic [31:0] id_rt_from,
+    logic [31:0] ex_rs_from,
+    logic [31:0] ex_rt_from,
     MipsReg id_rs_addr,
     MipsReg id_rt_addr,
     MipsReg ex_rs_addr,
@@ -161,17 +165,17 @@ task automatic print_forwarding_info(
 );
     $fdisplay(fd, "\n=== %s Forwarding Status ===", pipeline_name);
     if (id_rs_type != ForwardingType'(FORWARDING_TYPE_NONE))
-        $fdisplay(fd, "  ID: RS(%s) forwarded(%s): 0x%h -> 0x%h", 
-            get_reg_name(id_rs_addr), get_forwarding_type_name(id_rs_type), id_rs_data, id_rs_forwarded);
+        $fdisplay(fd, "  ID: RS(%s) forwarded(%s): 0x%h -> 0x%h from %0d", 
+            get_reg_name(id_rs_addr), get_forwarding_type_name(id_rs_type), id_rs_data, id_rs_forwarded, id_rs_from);
     if (id_rt_type != ForwardingType'(FORWARDING_TYPE_NONE))
-        $fdisplay(fd, "  ID: RT(%s) forwarded(%s): 0x%h -> 0x%h", 
-            get_reg_name(id_rt_addr), get_forwarding_type_name(id_rt_type), id_rt_data, id_rt_forwarded);
+        $fdisplay(fd, "  ID: RT(%s) forwarded(%s): 0x%h -> 0x%h from %0d", 
+            get_reg_name(id_rt_addr), get_forwarding_type_name(id_rt_type), id_rt_data, id_rt_forwarded, id_rt_from);
     if (ex_rs_type != ForwardingType'(FORWARDING_TYPE_NONE))
-        $fdisplay(fd, "  EX: RS(%s) forwarded(%s): 0x%h -> 0x%h", 
+        $fdisplay(fd, "  EX: RS(%s) forwarded(%s): 0x%h -> 0x%h from %0d", 
             get_reg_name(ex_rs_addr), get_forwarding_type_name(ex_rs_type), ex_rs_data, ex_rs_forwarded);
     if (ex_rt_type != ForwardingType'(FORWARDING_TYPE_NONE))
-        $fdisplay(fd, "  EX: RT(%s) forwarded(%s): 0x%h -> 0x%h", 
-            get_reg_name(ex_rt_addr), get_forwarding_type_name(ex_rt_type), ex_rt_data, ex_rt_forwarded);
+        $fdisplay(fd, "  EX: RT(%s) forwarded(%s): 0x%h -> 0x%h from %0d", 
+            get_reg_name(ex_rt_addr), get_forwarding_type_name(ex_rt_type), ex_rt_data, ex_rt_forwarded, ex_rt_from);
     if (mem_rs_type != ForwardingType'(FORWARDING_TYPE_NONE))
         $fdisplay(fd, "  MEM: RS(%s) forwarded(%s): 0x%h -> 0x%h", 
             get_reg_name(mem_rs_addr), get_forwarding_type_name(mem_rs_type), mem_rs_data, mem_rs_forwarded);

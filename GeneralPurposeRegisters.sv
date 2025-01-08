@@ -5,7 +5,8 @@
 module GeneralPurposeRegisters (
     input  logic        clk,
     input  logic        rst,
-    input  logic [31:0] pc,
+    input  logic [31:0] pc0,
+    input  logic [31:0] pc1,
     input  MipsReg      rs_addr0,
     input  MipsReg      rt_addr0,
     output logic [31:0] rs_data0,
@@ -52,10 +53,10 @@ module GeneralPurposeRegisters (
     always @(negedge clk) begin
         if (!rst) begin
             if (reg_write0) begin
-                $display("@%h: $%2d <= %h", pc, write_addr0, write_data0);
+                $display("@%h: $%2d <= %h", pc0, write_addr0, write_data0);
             end
             if (reg_write1) begin
-                $display("@%h: $%2d <= %h", pc + 4, write_addr1, write_data1);
+                $display("@%h: $%2d <= %h", pc1, write_addr1, write_data1);
             end
         end
     end
