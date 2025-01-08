@@ -25,6 +25,7 @@ initial begin
     for (k = 0; k < 60000; k = k + 1) begin
         clock = 1; #5;
         clock = 0; #5;
+        $display("> %0d", k);
     end
 
     // Please finish with `syscall`, finishes here may mean the clocks are not enough (really?)
